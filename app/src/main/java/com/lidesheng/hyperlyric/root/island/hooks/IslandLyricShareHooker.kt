@@ -6,10 +6,14 @@ import android.graphics.drawable.Drawable
 import android.graphics.drawable.Icon
 import android.media.session.MediaController
 import android.media.session.PlaybackState
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import com.lidesheng.hyperlyric.common.RootConstants
 import com.lidesheng.hyperlyric.root.HookEntry
+import com.lidesheng.hyperlyric.root.SystemUiEnhancementGate
 import com.lidesheng.hyperlyric.root.managedHook
 import com.lidesheng.hyperlyric.root.island.content.IslandMetadataContentAssembler
 import com.lidesheng.hyperlyric.root.island.policy.IslandModificationTargetPolicy
@@ -70,6 +74,17 @@ internal object IslandLyricShareHooker {
                 return chain.proceed()
             }
             val systemUiView = view as? View ?: return chain.proceed()
+            if (behavior == RootConstants.ISLAND_LONG_PRESS_BEHAVIOR_TOGGLE_LYRIC_DISPLAY) {
+                return handleLyricDisplayToggle(
+                    chain,
+                    systemUiView,
+                    data,
+                    systemUiView as? ViewGroup
+                )
+            }
+            if (!SystemUiEnhancementGate.isEnabled()) {
+                return chain.proceed()
+            }
             val shouldHandle = runCatching {
                 IslandModificationTargetPolicy.allowsCurrentScope(
                     data = data,
@@ -100,6 +115,32 @@ internal object IslandLyricShareHooker {
 
                 else -> chain.proceed()
             }
+        }
+
+        private fun handleLyricDisplayToggle(
+            chain: Chain,
+            systemUiView: View,
+            data: Any?,
+            hostRoot: ViewGroup?
+        ): Any? {
+            if (!SystemUiEnhancementGate.isBaseEnabled()) return chain.proceed()
+            if (!NativeLongPressSupport.canIntercept(systemUiView)) return chain.proceed()
+            val isMediaTarget = runCatching {
+                IslandModificationTargetPolicy.resolve(data, hostRoot).isMediaTarget
+            }.onFailure { error ->
+                HookLogger.w(TAG, "判断媒体超级岛失败，保留原生行为", error)
+            }.getOrDefault(false)
+            if (!isMediaTarget) return chain.proceed()
+
+            val nowEnabled = HookEntry.instance?.toggleLyricDisplayByIslandLongPress()
+                ?: return chain.proceed()
+            NativeLongPressSupport.dispatchLongPressedEvent(systemUiView)
+            val appCtx = systemUiView.context.applicationContext
+            val tip = if (nowEnabled) "已开启灵动岛歌词" else "已暂停灵动岛歌词（系统默认省电）"
+            Handler(Looper.getMainLooper()).post {
+                runCatching { Toast.makeText(appCtx, tip, Toast.LENGTH_SHORT).show() }
+            }
+            return null
         }
 
         private fun handleDragShare(
@@ -175,7 +216,8 @@ internal object IslandLyricShareHooker {
                 .takeIf {
                     it == RootConstants.ISLAND_LONG_PRESS_BEHAVIOR_DEFAULT ||
                             it == RootConstants.ISLAND_LONG_PRESS_BEHAVIOR_LYRIC_SHARE ||
-                            it == RootConstants.ISLAND_LONG_PRESS_BEHAVIOR_TOGGLE_PLAYBACK
+                            it == RootConstants.ISLAND_LONG_PRESS_BEHAVIOR_TOGGLE_PLAYBACK ||
+                            it == RootConstants.ISLAND_LONG_PRESS_BEHAVIOR_TOGGLE_LYRIC_DISPLAY
                 }
                 ?: RootConstants.DEFAULT_HOOK_ISLAND_LONG_PRESS_BEHAVIOR
         }

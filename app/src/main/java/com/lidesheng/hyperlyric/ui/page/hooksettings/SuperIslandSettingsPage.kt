@@ -229,7 +229,8 @@ fun SuperIslandSettingsPage() {
             ).takeIf {
                 it == RootConstants.ISLAND_LONG_PRESS_BEHAVIOR_DEFAULT ||
                         it == RootConstants.ISLAND_LONG_PRESS_BEHAVIOR_LYRIC_SHARE ||
-                        it == RootConstants.ISLAND_LONG_PRESS_BEHAVIOR_TOGGLE_PLAYBACK
+                        it == RootConstants.ISLAND_LONG_PRESS_BEHAVIOR_TOGGLE_PLAYBACK ||
+                        it == RootConstants.ISLAND_LONG_PRESS_BEHAVIOR_TOGGLE_LYRIC_DISPLAY
             } ?: RootConstants.DEFAULT_HOOK_ISLAND_LONG_PRESS_BEHAVIOR
         )
     }
@@ -237,7 +238,8 @@ fun SuperIslandSettingsPage() {
         listOf(
             RootConstants.ISLAND_LONG_PRESS_BEHAVIOR_DEFAULT,
             RootConstants.ISLAND_LONG_PRESS_BEHAVIOR_LYRIC_SHARE,
-            RootConstants.ISLAND_LONG_PRESS_BEHAVIOR_TOGGLE_PLAYBACK
+            RootConstants.ISLAND_LONG_PRESS_BEHAVIOR_TOGGLE_PLAYBACK,
+            RootConstants.ISLAND_LONG_PRESS_BEHAVIOR_TOGGLE_LYRIC_DISPLAY
         )
     }
     var swipeBehavior by remember {
@@ -426,7 +428,8 @@ fun SuperIslandSettingsPage() {
         listOf(
             R.string.option_island_long_press_default,
             R.string.option_island_long_press_lyric_share,
-            R.string.option_island_long_press_toggle_playback
+            R.string.option_island_long_press_toggle_playback,
+            R.string.option_island_long_press_toggle_lyric_display
         )
     }.map { stringResource(id = it) }
     val swipeBehaviorOptions = remember {

@@ -773,6 +773,7 @@ class HookEntry : XposedModule() {
                         }
 
                         RootConstants.KEY_HOOK_ENABLE -> {
+                            SystemUiEnhancementGate.suspendedByIslandLongPress = false
                             Handler(Looper.getMainLooper()).post {
                                 updateSystemUiEnhancements(SystemUiEnhancementGate.isEnabled())
                             }
@@ -866,8 +867,17 @@ class HookEntry : XposedModule() {
         HookLogger.d(TAG, "更新系统界面增强状态: enabled=$enabled")
     }
 
-    private fun shouldRunLyricSource(): Boolean =
-        prefs.getBoolean(RootConstants.KEY_HOOK_ENABLE, RootConstants.DEFAULT_HOOK_ENABLE)
+    /** 供超级岛长按手势即时开关歌词显示：关闭时停止歌词源并恢复澎湃系统默认灵动岛样式以省电。 */
+    internal fun toggleLyricDisplayByIslandLongPress(): Boolean {
+        val nextSuspended = !SystemUiEnhancementGate.suspendedByIslandLongPress
+        SystemUiEnhancementGate.suspendedByIslandLongPress = nextSuspended
+        Handler(Looper.getMainLooper()).post {
+            updateSystemUiEnhancements(SystemUiEnhancementGate.isEnabled())
+        }
+        return !nextSuspended
+    }
+
+    private fun shouldRunLyricSource(): Boolean = SystemUiEnhancementGate.isEnabled()
 
     private fun updateLyricSourceRuntime() {
         if (shouldRunLyricSource()) {

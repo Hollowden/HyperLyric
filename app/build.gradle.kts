@@ -15,7 +15,7 @@ android {
         minSdk = 33
         targetSdk = 37
         versionCode = 1945
-        versionName = "8.0"
+        versionName = "8.0-hollowden.1"
 
         ndk {
             abiFilters.add("arm64-v8a")
